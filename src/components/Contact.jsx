@@ -2,22 +2,42 @@ import React, { useState } from 'react';
 import Reveal from './Reveal';
 
 export default function Contact() {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', eventDetails: '' });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate submission delay
-    setTimeout(() => {
-      setLoading(false);
+    setError('');
+
+    try {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+      const response = await fetch(`${baseUrl}/api/inquiries`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(form),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send inquiry. Please try again.');
+      }
+
       setSubmitted(true);
-    }, 1400);
+    } catch (err) {
+      console.error('Submission error:', err);
+      setError(err.message || 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -82,8 +102,8 @@ export default function Contact() {
                       </svg>
                       Instagram
                     </span>
-                    <a href="https://instagram.com/kreventplanners" target="_blank" rel="noopener noreferrer" className="text-gray-300 font-medium text-[0.88rem] hover:text-pink-400 transition-colors">
-                      @kreventplanners
+                    <a href="https://instagram.com/kr_event_planner" target="_blank" rel="noopener noreferrer" className="text-gray-300 font-medium text-[0.88rem] hover:text-pink-400 transition-colors">
+                      @kr_event_planner
                     </a>
                   </div>
 
@@ -165,7 +185,7 @@ export default function Contact() {
                           id="phone"
                           name="phone"
                           type="tel"
-                          placeholder="+1 (555) 000-0000"
+                          placeholder="+91 8078965352"
                           value={form.phone}
                           onChange={handleChange}
                           className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-[0.95rem] focus:outline-none focus:border-purple-400/50 focus:bg-white/8 transition-all duration-200"
@@ -175,20 +195,27 @@ export default function Contact() {
 
                     {/* Message */}
                     <div className="flex flex-col gap-1.5">
-                      <label htmlFor="message" className="text-gray-400 text-[0.8rem] font-semibold uppercase tracking-wider">
+                      <label htmlFor="eventDetails" className="text-gray-400 text-[0.8rem] font-semibold uppercase tracking-wider">
                         Tell us about your event
                       </label>
                       <textarea
-                        id="message"
-                        name="message"
+                        id="eventDetails"
+                        name="eventDetails"
                         required
                         rows={4}
                         placeholder="Describe your event — type, date, guest count, vision…"
-                        value={form.message}
+                        value={form.eventDetails}
                         onChange={handleChange}
                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-[0.95rem] focus:outline-none focus:border-cyan-400/50 focus:bg-white/8 transition-all duration-200 resize-none"
                       />
                     </div>
+
+                    {/* Error Message */}
+                    {error && (
+                      <div className="text-red-400 text-sm bg-red-950/30 border border-red-500/20 rounded-xl px-4 py-3">
+                        {error}
+                      </div>
+                    )}
 
                     {/* Submit */}
                     <button
