@@ -1,19 +1,81 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { eventsData } from '../data/eventsData';
 import EventGallery from '../components/EventGallery';
 import Footer from '../components/Footer';
 
+const EVENT_TYPE_MAP = {
+  'corporate-events': 'Corporate',
+  'luxury-weddings': 'Wedding',
+  'theme-parties': 'Theme Party',
+  'birthday-parties': 'Birthday',
+  'ring-ceremony': 'Ring Ceremony',
+  'baby-shower': 'Baby Shower'
+};
+
 export default function EventPage() {
   const { eventType } = useParams();
   const navigate = useNavigate();
+  const [galleryImages, setGalleryImages] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Find event metadata
   const event = eventsData.find(e => e.id === eventType);
 
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, [eventType]);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    if (!event) return;
+    
+    let ignore = false;
+    const controller = new AbortController();
+
+    const fetchImages = async () => {
+      setLoading(true);
+      try {
+        const apiEventType = EVENT_TYPE_MAP[eventType] || 'Wedding';
+        const response = await fetch(`http://localhost:8080/api/images/getImages/${apiEventType}`, {
+          signal: controller.signal
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (!ignore) {
+            if (data.images && data.images.length > 0) {
+              const fetchedGallery = data.images.map((img, index) => ({
+                id: img.id ? img.id.toString() : `${apiEventType}-${index}`,
+                src: img.imageUrl,
+                alt: `${apiEventType} Image ${index + 1}`,
+                category: 'Gallery',
+                dbId: img.id
+              }));
+              setGalleryImages(fetchedGallery);
+            } else {
+              setGalleryImages(event.gallery);
+            }
+          }
+        } else {
+          if (!ignore) setGalleryImages(event.gallery);
+        }
+      } catch (error) {
+        if (!ignore && error.name !== 'AbortError') {
+          console.error('Error fetching images:', error);
+          setGalleryImages(event.gallery);
+        }
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
+
+    fetchImages();
+
+    return () => {
+      ignore = true;
+      controller.abort();
+    };
   }, [eventType]);
 
   if (!event) {
@@ -95,8 +157,13 @@ export default function EventPage() {
               <h2 className="font-display font-bold text-3xl">Event Gallery</h2>
               <div className="h-px flex-grow bg-white/10" />
             </div>
-            
-            <EventGallery images={event.gallery} />
+            {loading ? (
+              <div className="flex justify-center items-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500"></div>
+              </div>
+            ) : (
+              <EventGallery images={galleryImages} />
+            )}
           </motion.div>
         </section>
       </main>

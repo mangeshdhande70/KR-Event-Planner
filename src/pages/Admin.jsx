@@ -26,6 +26,12 @@ export default function Admin() {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [dragActive, setDragActive] = useState(false);
 
+  // Manage Images State
+  const [manageCategory, setManageCategory] = useState('Wedding');
+  const [adminImages, setAdminImages] = useState([]);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminError, setAdminError] = useState('');
+
   const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
   useEffect(() => {
@@ -89,6 +95,61 @@ export default function Admin() {
       setFetching(false);
     }
   };
+
+  const fetchAdminImages = async (category) => {
+    setAdminLoading(true);
+    setAdminError('');
+    try {
+      const response = await fetch(`${baseUrl}/api/images/getImages/${category}`);
+      if (!response.ok) throw new Error('Failed to fetch images');
+      const data = await response.json();
+      if (data.images) {
+        setAdminImages(data.images);
+      } else {
+        setAdminImages([]);
+      }
+    } catch (err) {
+      setAdminError(err.message || 'Could not load images');
+    } finally {
+      setAdminLoading(false);
+    }
+  };
+
+  const handleDeleteImage = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this image?")) return;
+    try {
+      const response = await fetch(`${baseUrl}/api/images/${id}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete image');
+      }
+      setAdminImages(adminImages.filter(img => img.id !== id));
+    } catch (err) {
+      alert("Error deleting image: " + err.message);
+    }
+  };
+
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      const response = await fetch(`${baseUrl}/api/inquiries/${id}/status?status=${newStatus}`, {
+        method: 'PUT'
+      });
+      if (!response.ok) throw new Error('Failed to update status');
+      
+      setInquiries(inquiries.map(inq => 
+        inq.id === id ? { ...inq, status: newStatus } : inq
+      ));
+    } catch (err) {
+      alert('Error updating status: ' + err.message);
+    }
+  };
+
+  useEffect(() => {
+    if (activeView === 'manageImages') {
+      fetchAdminImages(manageCategory);
+    }
+  }, [activeView, manageCategory]);
 
   const handleLogout = () => {
     setIsLoggedIn(false);
@@ -377,6 +438,34 @@ export default function Admin() {
               </span>
             </div>
 
+            {/* Card 4: Manage Images */}
+            <div
+              onClick={() => { setActiveView('manageImages'); setAdminError(''); setAdminImages([]); setManageCategory('Wedding'); }}
+              className="glass-card rounded-[24px] p-8 border border-white/5 hover:border-blue-400/30 hover:shadow-[0_15px_40px_rgba(59,130,246,0.1)] transition-all duration-300 cursor-pointer group flex flex-col justify-between min-h-[220px]"
+            >
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-blue-400/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-400">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                    <line x1="3" y1="9" x2="21" y2="9" />
+                    <line x1="9" y1="21" x2="9" y2="9" />
+                  </svg>
+                </div>
+                <h3 className="font-display font-bold text-xl text-white group-hover:text-blue-400 transition-colors">
+                  Manage Images
+                </h3>
+                <p className="text-gray-400 text-sm mt-2 leading-relaxed">
+                  View, delete, and organize event gallery images directly.
+                </p>
+              </div>
+              <span className="text-blue-400 text-sm font-semibold flex items-center gap-1.5 mt-4 self-start">
+                Open Gallery
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="group-hover:translate-x-1 transition-transform">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </span>
+            </div>
+
           </div>
         )}
 
@@ -430,22 +519,54 @@ export default function Admin() {
                   {currentInquiries.map((inquiry) => (
                     <div key={inquiry.id} className="glass-card rounded-[22px] p-6 border border-white/5 hover:border-cyan-400/20 hover:shadow-[0_8px_30px_rgba(34,211,238,0.05)] transition-all duration-300">
                       <div className="flex justify-between items-start gap-4 mb-4">
-                        <div>
+                        <div className="flex flex-col items-start gap-1">
                           <h3 className="font-bold text-[1.1rem] text-white tracking-wide">{inquiry.name}</h3>
-                          <p className="text-gray-400 text-xs mt-0.5">{inquiry.email}</p>
+                          <p className="text-gray-400 text-xs">{inquiry.email}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="inline-block text-[0.65rem] uppercase tracking-wider font-bold px-2.5 py-0.5 rounded border border-white/10 text-gray-300 bg-white/5">
+                              {inquiry.eventType || 'General'}
+                            </span>
+                            {inquiry.eventDate && (
+                              <span className="inline-block text-[0.65rem] uppercase tracking-wider font-bold px-2.5 py-0.5 rounded border border-purple-400/20 text-purple-300 bg-purple-400/10">
+                                Event Date: {new Date(inquiry.eventDate).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <span className="text-[0.72rem] text-cyan-400 font-semibold bg-cyan-400/10 px-3 py-1 rounded-full border border-cyan-400/20">
-                          {inquiry.createdAt ? new Date(inquiry.createdAt).toLocaleDateString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          }) : 'N/A'}
-                        </span>
+                        <div className="flex flex-col items-end gap-2">
+                          <span className="text-[0.72rem] text-cyan-400 font-semibold bg-cyan-400/10 px-3 py-1 rounded-full border border-cyan-400/20">
+                            {inquiry.createdAt ? new Date(inquiry.createdAt).toLocaleDateString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            }) : 'N/A'}
+                          </span>
+                        </div>
                       </div>
                       <div className="flex flex-col gap-2 text-sm text-gray-300 border-t border-white/5 pt-4">
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-500 font-semibold w-16">Phone:</span>
-                          <a href={`tel:${inquiry.phone}`} className="hover:text-cyan-400 transition-colors font-medium">{inquiry.phone}</a>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-500 font-semibold w-16">Phone:</span>
+                            <a href={`tel:${inquiry.phone}`} className="hover:text-cyan-400 transition-colors font-medium">{inquiry.phone}</a>
+                          </div>
+                          <div className="flex items-center gap-2 sm:justify-end">
+                            <span className="text-gray-500 font-semibold text-xs">Status:</span>
+                            <select
+                              value={inquiry.status || 'New'}
+                              onChange={(e) => handleStatusChange(inquiry.id, e.target.value)}
+                              className={`bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs font-bold focus:outline-none focus:border-cyan-400/50 transition-all cursor-pointer ${
+                                (inquiry.status || 'New') === 'New' ? 'text-blue-400' :
+                                (inquiry.status === 'In-progress') ? 'text-yellow-400' :
+                                (inquiry.status === 'Done') ? 'text-green-400' :
+                                'text-red-400'
+                              }`}
+                            >
+                              <option className="bg-[#0f172a] text-blue-400" value="New">New</option>
+                              <option className="bg-[#0f172a] text-yellow-400" value="In-progress">In-progress</option>
+                              <option className="bg-[#0f172a] text-green-400" value="Done">Done</option>
+                              <option className="bg-[#0f172a] text-red-400" value="Rejected">Rejected</option>
+                            </select>
+                          </div>
                         </div>
                         <div className="flex flex-col gap-1 mt-2">
                           <span className="text-gray-500 font-semibold">Event Details:</span>
@@ -623,6 +744,86 @@ export default function Admin() {
                   </button>
 
                 </form>
+              </div>
+            </Reveal>
+          </div>
+        )}
+
+        {/* VIEW 4: Manage Images view */}
+        {activeView === 'manageImages' && (
+          <div className="flex flex-col gap-6 mt-4">
+            <Reveal>
+              <div className="glass-card rounded-[28px] p-8 md:p-10 border border-white/10 relative overflow-hidden">
+                <div className="flex flex-col gap-1 mb-8">
+                  <h2 className="font-display font-bold text-2xl text-white">
+                    Manage Event Images
+                  </h2>
+                  <p className="text-gray-400 text-sm">
+                    Select a category to view and delete images.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-2 mb-8 max-w-[300px]">
+                  <label htmlFor="manageCategory" className="text-gray-400 text-[0.8rem] font-semibold uppercase tracking-wider">
+                    Event Category
+                  </label>
+                  <select
+                    id="manageCategory"
+                    value={manageCategory}
+                    onChange={(e) => setManageCategory(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-blue-400/50 transition-all cursor-pointer"
+                  >
+                    <option className="bg-[#0f172a]" value="Wedding">Wedding</option>
+                    <option className="bg-[#0f172a]" value="Corporate">Corporate</option>
+                    <option className="bg-[#0f172a]" value="Birthday">Birthday</option>
+                    <option className="bg-[#0f172a]" value="Baby Shower">Baby Shower</option>
+                    <option className="bg-[#0f172a]" value="Ring Ceremony">Ring Ceremony</option>
+                    <option className="bg-[#0f172a]" value="Theme Party">Theme Party</option>
+                  </select>
+                </div>
+
+                {adminLoading ? (
+                  <div className="flex justify-center items-center py-20">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                  </div>
+                ) : adminError ? (
+                  <div className="text-center py-16 bg-red-950/15 border border-red-500/10 rounded-3xl">
+                    <p className="text-red-400 mb-4 font-semibold">{adminError}</p>
+                    <button
+                      onClick={() => fetchAdminImages(manageCategory)}
+                      className="px-6 py-2.5 rounded-full bg-white text-gray-950 font-bold hover:bg-blue-400 transition-all"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                ) : adminImages.length === 0 ? (
+                  <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/5">
+                    <p className="text-gray-400 text-lg">No images found for this category.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {adminImages.map((img) => (
+                      <div key={img.id} className="relative group rounded-xl overflow-hidden bg-white/5 border border-white/10 flex flex-col h-full">
+                        <div className="aspect-square w-full overflow-hidden">
+                          <img
+                            src={img.imageUrl}
+                            alt={`Image ${img.id}`}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          />
+                        </div>
+                        <div className="p-4 flex justify-between items-center bg-[#090e1a]/80 backdrop-blur-md">
+                          <span className="text-xs text-gray-400 font-medium">ID: {img.id}</span>
+                          <button
+                            onClick={() => handleDeleteImage(img.id)}
+                            className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500 hover:text-white text-red-400 border border-red-500/20 hover:border-red-500 text-xs font-bold rounded-lg transition-all duration-300"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </Reveal>
           </div>

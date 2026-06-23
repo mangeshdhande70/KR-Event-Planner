@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Reveal from './Reveal';
 
 export default function Contact() {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', eventDetails: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', eventType: 'Wedding', eventDate: '', eventDetails: '' });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -133,7 +133,7 @@ export default function Contact() {
                     <h3 className="font-display font-bold text-2xl text-white">Message Sent!</h3>
                     <p className="text-gray-400 text-base max-w-[280px]">Thank you for reaching out. We'll get back to you within 24 hours.</p>
                     <button
-                      onClick={() => { setSubmitted(false); setForm({ name: '', email: '', phone: '', message: '' }); }}
+                      onClick={() => { setSubmitted(false); setForm({ name: '', email: '', phone: '', eventType: 'Wedding', eventDate: '', eventDetails: '' }); }}
                       className="mt-3 text-cyan-400 text-sm font-semibold hover:underline transition-all"
                     >
                       Send another message
@@ -189,6 +189,47 @@ export default function Contact() {
                           value={form.phone}
                           onChange={handleChange}
                           className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-[0.95rem] focus:outline-none focus:border-purple-400/50 focus:bg-white/8 transition-all duration-200"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Event Type + Event Date */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Event Type */}
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="eventType" className="text-gray-400 text-[0.8rem] font-semibold uppercase tracking-wider">
+                          Event Type
+                        </label>
+                        <select
+                          id="eventType"
+                          name="eventType"
+                          value={form.eventType}
+                          onChange={handleChange}
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/8 transition-all cursor-pointer"
+                        >
+                          <option className="bg-[#0f172a]" value="Wedding">Wedding</option>
+                          <option className="bg-[#0f172a]" value="Corporate">Corporate</option>
+                          <option className="bg-[#0f172a]" value="Birthday">Birthday</option>
+                          <option className="bg-[#0f172a]" value="Baby Shower">Baby Shower</option>
+                          <option className="bg-[#0f172a]" value="Ring Ceremony">Ring Ceremony</option>
+                          <option className="bg-[#0f172a]" value="Theme Party">Theme Party</option>
+                          <option className="bg-[#0f172a]" value="Other">Other</option>
+                        </select>
+                      </div>
+
+                      {/* Event Date */}
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="eventDate" className="text-gray-400 text-[0.8rem] font-semibold uppercase tracking-wider">
+                          Event Date
+                        </label>
+                        <input
+                          id="eventDate"
+                          name="eventDate"
+                          type="date"
+                          min={new Date().toISOString().split('T')[0]}
+                          value={form.eventDate}
+                          onChange={handleChange}
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-400/50 focus:bg-white/8 transition-all cursor-pointer [color-scheme:dark]"
                         />
                       </div>
                     </div>
