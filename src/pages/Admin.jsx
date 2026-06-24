@@ -11,6 +11,10 @@ export default function Admin() {
   // Dashboard Navigation State: 'menu' | 'inquiries' | 'upload'
   const [activeView, setActiveView] = useState('menu');
 
+  // Inquiry Filter State
+  const [filterEventType, setFilterEventType] = useState('All');
+  const [filterStatus, setFilterStatus] = useState('NEW');
+
   // Inquiries State
   const [inquiries, setInquiries] = useState([]);
   const [fetching, setFetching] = useState(false);
@@ -77,19 +81,21 @@ export default function Admin() {
     }
   };
 
-  const fetchInquiries = async () => {
+  const fetchInquiries = async (eventType = filterEventType, status = filterStatus) => {
     setFetching(true);
     setFetchError('');
     try {
-      const response = await fetch(`${baseUrl}/api/inquiries`);
+      const params = new URLSearchParams();
+      if (eventType && eventType !== 'All') params.append('eventType', eventType);
+      if (status && status !== 'All') params.append('status', status);
+      const url = `${baseUrl}/api/inquiries/filter${params.toString() ? '?' + params.toString() : ''}`;
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Failed to fetch inquiries.');
       }
       const data = await response.json();
-      // Sort inquiries by newest first (created date)
-      const sorted = data.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-      setInquiries(sorted);
-      setCurrentPage(1); // Reset page to 1
+      setInquiries(data);
+      setCurrentPage(1);
     } catch (err) {
       console.error('Fetch error:', err);
       setFetchError(err.message || 'Could not load inquiries.');
@@ -486,21 +492,67 @@ export default function Admin() {
           <div className="flex flex-col gap-6">
 
             {/* Top Toolbar */}
-            <div className="flex items-center justify-between">
-              <h2 className="font-display font-bold text-2xl text-white flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
-                Inquiry Messages ({inquiries.length})
-              </h2>
-              <button
-                onClick={fetchInquiries}
-                disabled={fetching}
-                className="px-4 py-2 rounded-full border border-white/10 text-gray-300 text-sm font-semibold hover:bg-white/5 transition-all flex items-center gap-2 disabled:opacity-50"
-              >
-                <svg className={fetching ? 'animate-spin' : ''} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-                </svg>
-                Sync List
-              </button>
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <h2 className="font-display font-bold text-2xl text-white flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                  Inquiry Messages ({inquiries.length})
+                </h2>
+                <button
+                  onClick={() => fetchInquiries(filterEventType, filterStatus)}
+                  disabled={fetching}
+                  className="px-4 py-2 rounded-full border border-white/10 text-gray-300 text-sm font-semibold hover:bg-white/5 transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  <svg className={fetching ? 'animate-spin' : ''} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                  </svg>
+                  Refresh
+                </button>
+              </div>
+
+              {/* Filter Bar */}
+              <div className="glass-card rounded-2xl p-4 border border-white/5 flex flex-wrap items-end gap-4">
+                <div className="flex flex-col gap-1.5 min-w-[180px]">
+                  <label className="text-gray-400 text-[0.75rem] font-semibold uppercase tracking-wider">Event Type</label>
+                  <select
+                    value={filterEventType}
+                    onChange={(e) => setFilterEventType(e.target.value)}
+                    className="bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-400/50 transition-all cursor-pointer"
+                  >
+                    <option className="bg-[#0f172a]" value="All">All Event Types</option>
+                    <option className="bg-[#0f172a]" value="Wedding">Wedding</option>
+                    <option className="bg-[#0f172a]" value="Corporate">Corporate</option>
+                    <option className="bg-[#0f172a]" value="Birthday">Birthday</option>
+                    <option className="bg-[#0f172a]" value="Baby Shower">Baby Shower</option>
+                    <option className="bg-[#0f172a]" value="Ring Ceremony">Ring Ceremony</option>
+                    <option className="bg-[#0f172a]" value="Theme Party">Theme Party</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5 min-w-[160px]">
+                  <label className="text-gray-400 text-[0.75rem] font-semibold uppercase tracking-wider">Status</label>
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-400/50 transition-all cursor-pointer"
+                  >
+                    <option className="bg-[#0f172a]" value="All">All Statuses</option>
+                    <option className="bg-[#0f172a]" value="NEW">New</option>
+                    <option className="bg-[#0f172a]" value="INPROGRESS">In Progress</option>
+                    <option className="bg-[#0f172a]" value="DONE">Done</option>
+                    <option className="bg-[#0f172a]" value="REJECTED">Rejected</option>
+                  </select>
+                </div>
+                <button
+                  onClick={() => fetchInquiries(filterEventType, filterStatus)}
+                  disabled={fetching}
+                  className="px-5 py-2.5 rounded-xl bg-cyan-400/10 border border-cyan-400/20 text-cyan-400 text-sm font-bold hover:bg-cyan-400/20 transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                  </svg>
+                  Apply Filters
+                </button>
+              </div>
             </div>
 
             {fetching && inquiries.length === 0 ? (
