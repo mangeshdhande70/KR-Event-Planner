@@ -126,7 +126,7 @@ export default function Admin() {
   const handleDeleteImage = async (id) => {
     if (!window.confirm("Are you sure you want to delete this image?")) return;
     try {
-      const response = await fetch(`${baseUrl}/api/images/${id}`, {
+      const response = await fetch(`${baseUrl}/api/images/delete/${id}`, {
         method: 'DELETE'
       });
       if (!response.ok) {
@@ -144,8 +144,8 @@ export default function Admin() {
         method: 'PUT'
       });
       if (!response.ok) throw new Error('Failed to update status');
-      
-      setInquiries(inquiries.map(inq => 
+
+      setInquiries(inquiries.map(inq =>
         inq.id === id ? { ...inq, status: newStatus } : inq
       ));
     } catch (err) {
@@ -165,7 +165,7 @@ export default function Admin() {
     setActiveView('menu');
     setCredentials({ username: '', password: '' });
   };
-  
+
   // Sync active view with URL
   const location = useLocation();
   useEffect(() => {
@@ -548,7 +548,7 @@ export default function Admin() {
                   className="px-5 py-2.5 rounded-xl bg-cyan-400/10 border border-cyan-400/20 text-cyan-400 text-sm font-bold hover:bg-cyan-400/20 transition-all flex items-center gap-2 disabled:opacity-50"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                    <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
                   </svg>
                   Apply Filters
                 </button>
@@ -618,12 +618,11 @@ export default function Admin() {
                             <select
                               value={inquiry.status || 'New'}
                               onChange={(e) => handleStatusChange(inquiry.id, e.target.value)}
-                              className={`bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs font-bold focus:outline-none focus:border-cyan-400/50 transition-all cursor-pointer ${
-                                (inquiry.status || 'New') === 'New' ? 'text-blue-400' :
+                              className={`bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs font-bold focus:outline-none focus:border-cyan-400/50 transition-all cursor-pointer ${(inquiry.status || 'New') === 'New' ? 'text-blue-400' :
                                 (inquiry.status === 'In-progress') ? 'text-yellow-400' :
-                                (inquiry.status === 'Done') ? 'text-green-400' :
-                                'text-red-400'
-                              }`}
+                                  (inquiry.status === 'Done') ? 'text-green-400' :
+                                    'text-red-400'
+                                }`}
                             >
                               <option className="bg-[#0f172a] text-blue-400" value="New">New</option>
                               <option className="bg-[#0f172a] text-yellow-400" value="In-progress">In-progress</option>
@@ -661,8 +660,8 @@ export default function Admin() {
                         key={pageNumber}
                         onClick={() => handlePageChange(pageNumber)}
                         className={`w-10 h-10 rounded-full font-bold text-sm transition-all ${currentPage === pageNumber
-                            ? 'bg-cyan-400 text-gray-950 shadow-[0_4px_15px_rgba(34,211,238,0.25)]'
-                            : 'border border-white/10 text-gray-300 hover:bg-white/5'
+                          ? 'bg-cyan-400 text-gray-950 shadow-[0_4px_15px_rgba(34,211,238,0.25)]'
+                          : 'border border-white/10 text-gray-300 hover:bg-white/5'
                           }`}
                       >
                         {pageNumber}
@@ -742,8 +741,8 @@ export default function Admin() {
                       onDragLeave={handleDrag}
                       onDrop={handleDrop}
                       className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center gap-4 transition-all duration-300 ${dragActive
-                          ? 'border-purple-400 bg-purple-400/10'
-                          : 'border-white/15 bg-white/5 hover:border-white/30 hover:bg-white/8'
+                        ? 'border-purple-400 bg-purple-400/10'
+                        : 'border-white/15 bg-white/5 hover:border-white/30 hover:bg-white/8'
                         }`}
                     >
                       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-400">
