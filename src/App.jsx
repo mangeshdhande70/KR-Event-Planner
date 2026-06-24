@@ -30,7 +30,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/gallery/:eventType" element={<EventPage />} />
-        <Route path="/admin" element={<Admin />} />
+        <Route path="/admin/*" element={<Admin />} />
       </Routes>
     </div>
   );

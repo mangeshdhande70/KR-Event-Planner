@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Reveal from '../components/Reveal';
+import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 
 export default function Admin() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -33,6 +34,7 @@ export default function Admin() {
   const [adminError, setAdminError] = useState('');
 
   const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+  const navigate = useNavigate();
 
   useEffect(() => {
     const session = localStorage.getItem('adminSession');
@@ -157,6 +159,16 @@ export default function Admin() {
     setActiveView('menu');
     setCredentials({ username: '', password: '' });
   };
+  
+  // Sync active view with URL
+  const location = useLocation();
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.endsWith('/inquiries')) setActiveView('inquiries');
+    else if (path.endsWith('/upload')) setActiveView('upload');
+    else if (path.endsWith('/manageImages')) setActiveView('manageImages');
+    else setActiveView('menu');
+  }, [location.pathname]);
 
   // Pagination Logic
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -336,7 +348,7 @@ export default function Admin() {
           <div className="flex items-center gap-4">
             {activeView !== 'menu' && (
               <button
-                onClick={() => { setActiveView('menu'); setFetchError(''); }}
+                onClick={() => navigate('/admin')}
                 className="px-5 py-2 rounded-full border border-white/10 text-gray-300 text-sm font-semibold hover:bg-white/5 transition-all flex items-center gap-2"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -360,7 +372,7 @@ export default function Admin() {
 
             {/* Card 1: Inquiries */}
             <div
-              onClick={() => { setActiveView('inquiries'); fetchInquiries(); }}
+              onClick={() => { navigate('inquiries'); fetchInquiries(); }}
               className="glass-card rounded-[24px] p-8 border border-white/5 hover:border-cyan-400/30 hover:shadow-[0_15px_40px_rgba(34,211,238,0.1)] transition-all duration-300 cursor-pointer group flex flex-col justify-between min-h-[220px]"
             >
               <div>
@@ -386,7 +398,7 @@ export default function Admin() {
 
             {/* Card 2: Upload Images */}
             <div
-              onClick={() => { setActiveView('upload'); setUploadSuccess(false); }}
+              onClick={() => { navigate('upload'); setUploadSuccess(false); }}
               className="glass-card rounded-[24px] p-8 border border-white/5 hover:border-purple-400/30 hover:shadow-[0_15px_40px_rgba(168,85,247,0.1)] transition-all duration-300 cursor-pointer group flex flex-col justify-between min-h-[220px]"
             >
               <div>
@@ -440,7 +452,7 @@ export default function Admin() {
 
             {/* Card 4: Manage Images */}
             <div
-              onClick={() => { setActiveView('manageImages'); setAdminError(''); setAdminImages([]); setManageCategory('Wedding'); }}
+              onClick={() => { navigate('manageImages'); setAdminError(''); setAdminImages([]); setManageCategory('Wedding'); }}
               className="glass-card rounded-[24px] p-8 border border-white/5 hover:border-blue-400/30 hover:shadow-[0_15px_40px_rgba(59,130,246,0.1)] transition-all duration-300 cursor-pointer group flex flex-col justify-between min-h-[220px]"
             >
               <div>
